@@ -26,11 +26,23 @@ week_11 <- shaming %>%
 
 primary_06 ~ solo + primary_04 + treatment + solo:treatment
 
+```{r, cache = TRUE}
+fit_1 <- stan_glm(data = week_11,
+                  formula = primary_06 ~ solo + primary_04 + treatment + solo:treatment,
+                  refresh = 0)
+
+print(fit_1, digits = 4)
+```
+
+
 (Assume that you have already completed a cross-validation analysis and chosen this one model to use going forward.)
 
 * Which data set should you use to fit the model? Explain why.
+We should use week_11 because we have already validated the model through cross validation, so we should fit it with the whole dataset to best predict.
 
 * Interpret the fitted model. Should we keep all these variables? And the interaction term?
+we should keep the variables that we were studying and the control variable
+
 
 
 
@@ -38,14 +50,83 @@ primary_06 ~ solo + primary_04 + treatment + solo:treatment
 
 **Prompt:** What is the causal effect of receiving the Neighbors postcard as compared to being in the control group? Provide a posterior probability distribution.
 
+```{r}
+new <- tibble(treatment = c("Control", "Neighbors"), solo = TRUE, primary_04 = "Yes")
+
+rownames(new) <- c("Control", "Neighbors")
+
+pred <- posterior_predict(fit_1, newdata = new)
+pred %>%
+  as_tibble() %>%
+  mutate_all(as.numeric) %>%
+  pivot_longer(cols = Control:Neighbors,
+               names_to = "Treatment",
+               values_to = "probability") %>%
+  ggplot(aes(probability, fill = Treatment)) +
+  geom_histogram(aes(y = after_stat(count/sum(count))),
+                     position = "identity",
+                 alpha = .5,
+                 bins = 60)
+
+pred %>%
+  as_tibble() %>%
+  mutate_all(as.numeric) %>%
+  mutate(causal = Neighbors - Control) %>%
+  ggplot(aes(causal)) +
+  geom_histogram(aes(y = after_stat(count/sum(count))),
+                     position = "identity",
+                 alpha = .5,
+                 bins = 60)
+```
+
+
 * One way to answer this question is to use `posterior_predict()`. Do that. Make it look nice! Write a sentence or two interpreting the answer.
+looks like there isn't that much of an effect
 
 * A second approach uses `posterior_epred()`. Do that. Make it look nice! Write a sentence or two interpreting the answer.
-
+looks like there is an effect, that being in the neighbors group increases the prob of voting in the 2006 primaries by 10%
+```{r}
+post_pred <- posterior_epred(fit_1, newdata = new)
+post_pred %>%
+  as_tibble() %>%
+  mutate_all(as.numeric) %>%
+  pivot_longer(cols = Control:Neighbors,
+               names_to = "Treatment",
+               values_to = "probability") %>%
+  ggplot(aes(probability, fill = Treatment)) +
+  geom_histogram(aes(y = after_stat(count/sum(count))),
+                     position = "identity",
+                 alpha = .5,
+                 bins = 60)
+```
+if we want to understand the uncertainty of the population (epred)
+understanding the average of one person, use posterior pred
 
 ## Scene 3
 
 **Prompt:** There are four primary causal effects of interest: each of the four treatments compared, individually, to Control.  Build a big graphic which shows the four posterior probability distributions of the expected values at once. See #preceptors-notes for my version. You do not need to copy my work! Make something better!
+
+```{r}
+new_one <- tibble(treatment = c("Control", "Neighbors", "Civic Duty", "Hawthorne"), solo = TRUE, primary_04 = "Yes")
+
+rownames(new_one) <- c("Control", "Neighbors", "Civic Duty", "Hawthorne")
+
+#can use expand_gird(treatment = levels(week_11$treatment),solo = TRUE, primary_04 = "Yes")
+
+new_pred <- posterior_epred(fit_1, newdata = new_one)
+new_pred %>%
+  as_tibble() %>%
+  mutate_all(as.numeric) %>%
+  pivot_longer(everything(),
+               names_to = "Treatment",
+               values_to = "probability") %>%
+  ggplot(aes(probability, fill = Treatment)) +
+  geom_histogram(aes(y = after_stat(count/sum(count))),
+                     position = "identity",
+                 alpha = .5,
+                 bins = 60)
+```
+
 
 * Challenge question: Do the same but for both `solo = TRUE` and `solo = FALSE`. This means that there are 8 posterior probability distributions to show. Think hard about the best way to display them. What point are you trying to get across to your readers?
 
