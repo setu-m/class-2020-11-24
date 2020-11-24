@@ -1,0 +1,62 @@
+---
+title: "Week 11, Day 3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(PPBDS.data)
+library(rstanarm)
+library(tidyverse)
+
+# Same data clean up as last week.
+
+set.seed(1005)
+week_11 <- shaming %>% 
+  mutate(age = 2006 - birth_year) %>% 
+  mutate(treatment = fct_relevel(treatment, "Control")) %>% 
+  mutate(solo = ifelse(hh_size == 1, TRUE, FALSE)) %>% 
+  select(-general_04, -no_of_names, -birth_year, -hh_size) 
+```
+
+
+## Scene 1
+
+**Prompt:** Create a fitted model object called `fit_1` using this formula or, if you want, a formula which you prefer. I recommend not making your model execessively complex.
+
+primary_06 ~ solo + primary_04 + treatment + solo:treatment
+
+(Assume that you have already completed a cross-validation analysis and chosen this one model to use going forward.)
+
+* Which data set should you use to fit the model? Explain why.
+
+* Interpret the fitted model. Should we keep all these variables? And the interaction term?
+
+
+
+## Scene 2
+
+**Prompt:** What is the causal effect of receiving the Neighbors postcard as compared to being in the control group? Provide a posterior probability distribution.
+
+* One way to answer this question is to use `posterior_predict()`. Do that. Make it look nice! Write a sentence or two interpreting the answer.
+
+* A second approach uses `posterior_epred()`. Do that. Make it look nice! Write a sentence or two interpreting the answer.
+
+
+## Scene 3
+
+**Prompt:** There are four primary causal effects of interest: each of the four treatments compared, individually, to Control.  Build a big graphic which shows the four posterior probability distributions of the expected values at once. See #preceptors-notes for my version. You do not need to copy my work! Make something better!
+
+* Challenge question: Do the same but for both `solo = TRUE` and `solo = FALSE`. This means that there are 8 posterior probability distributions to show. Think hard about the best way to display them. What point are you trying to get across to your readers?
+
+
+
+## Optional Question
+
+Use a logistic model --- `stan_glm()` with `family = binomial()` --- to fit the model. How does that change the results above, especially in Scene 2. Chapter 11 provides some relevant discussion?
+
+
+
+
+
+
